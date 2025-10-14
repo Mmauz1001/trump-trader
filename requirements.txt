@@ -1,0 +1,42 @@
+# Core dependencies
+python-dotenv==1.0.1
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# Social Media Monitoring
+tweepy==4.14.0
+requests==2.32.3
+beautifulsoup4==4.12.3
+
+# Sentiment Analysis
+anthropic==0.39.0
+
+# Trading
+python-binance==1.0.19
+
+# Notifications
+python-telegram-bot==21.9
+
+# Database
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+alembic==1.14.0
+
+# Caching
+redis==5.2.0
+
+# Utilities
+pytz==2024.2
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+pytest-mock==3.14.0
+freezegun==1.5.1
+
+# Development
+black==24.10.0
+flake8==7.1.1
+mypy==1.13.0
+
