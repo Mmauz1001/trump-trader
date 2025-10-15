@@ -35,15 +35,31 @@ jobs:
             sudo systemctl stop trump-trader.service || true
             sudo systemctl stop trump-trader-telegram.service || true
             
-            # 2. KILL ANY ORPHANED PYTHON PROCESSES (carefully to avoid killing SSH)
+            # 2. KILL ANY ORPHANED PYTHON PROCESSES (using exact PID matching)
             echo "🧹 Cleaning up any orphaned processes..."
-            sudo pkill -9 -f "/home/ubuntu/trump_trader/main.py" || true
-            sudo pkill -9 -f "/home/ubuntu/trump_trader/telegram_bot_handler.py" || true
+            # Find and kill main.py processes
+            MAIN_PIDS=$(ps aux | grep "python.*main.py start" | grep -v grep | awk '{print $2}')
+            if [ ! -z "$MAIN_PIDS" ]; then
+              echo "Killing main.py PIDs: $MAIN_PIDS"
+              for pid in $MAIN_PIDS; do
+                sudo kill -9 $pid 2>/dev/null || true
+              done
+            fi
+            
+            # Find and kill telegram_bot_handler.py processes
+            TELEGRAM_PIDS=$(ps aux | grep "python.*telegram_bot_handler.py" | grep -v grep | awk '{print $2}')
+            if [ ! -z "$TELEGRAM_PIDS" ]; then
+              echo "Killing telegram_bot_handler.py PIDs: $TELEGRAM_PIDS"
+              for pid in $TELEGRAM_PIDS; do
+                sudo kill -9 $pid 2>/dev/null || true
+              done
+            fi
+            
             sleep 2
             
             # Verify no processes are running
-            MAIN_COUNT=$(ps aux | grep "/home/ubuntu/trump_trader/main.py" | grep python | grep -v grep | wc -l)
-            TELEGRAM_COUNT=$(ps aux | grep "/home/ubuntu/trump_trader/telegram_bot_handler.py" | grep python | grep -v grep | wc -l)
+            MAIN_COUNT=$(ps aux | grep "python.*main.py" | grep -v grep | wc -l)
+            TELEGRAM_COUNT=$(ps aux | grep "python.*telegram_bot_handler.py" | grep -v grep | wc -l)
             if [ "$MAIN_COUNT" -ne 0 ] || [ "$TELEGRAM_COUNT" -ne 0 ]; then
               echo "❌ ERROR: Failed to stop all processes"
               echo "Main: $MAIN_COUNT, Telegram: $TELEGRAM_COUNT"
@@ -116,8 +132,8 @@ jobs:
             
             # 11. VERIFY NO DUPLICATE PROCESSES
             echo "🔍 Checking for duplicate processes..."
-            MAIN_PROCS=$(ps aux | grep "/home/ubuntu/trump_trader/main.py" | grep python | grep -v grep | wc -l)
-            TELEGRAM_PROCS=$(ps aux | grep "/home/ubuntu/trump_trader/telegram_bot_handler.py" | grep python | grep -v grep | wc -l)
+            MAIN_PROCS=$(ps aux | grep "python.*main.py" | grep -v grep | wc -l)
+            TELEGRAM_PROCS=$(ps aux | grep "python.*telegram_bot_handler.py" | grep -v grep | wc -l)
             
             if [ "$MAIN_PROCS" -ne 1 ]; then
               echo "❌ ERROR: Found $MAIN_PROCS main.py processes (expected 1)"
