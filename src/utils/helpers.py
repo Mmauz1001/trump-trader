@@ -1,7 +1,7 @@
 """Utility helper functions."""
 
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict
 
 
@@ -20,7 +20,7 @@ def hash_content(content: str) -> str:
 
 def get_timestamp() -> datetime:
     """Get current UTC timestamp."""
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 
 def format_currency(amount: float, decimals: int = 2) -> str:
@@ -37,24 +37,28 @@ def format_currency(amount: float, decimals: int = 2) -> str:
     return f"${amount:,.{decimals}f}"
 
 
-def calculate_pnl_percentage(entry_price: float, exit_price: float, side: str) -> float:
+def calculate_pnl_percentage(entry_price: float, exit_price: float, side: str, leverage: int = 1) -> float:
     """
-    Calculate profit/loss percentage.
+    Calculate profit/loss percentage with leverage applied.
 
     Args:
         entry_price: Entry price
         exit_price: Exit price
         side: Position side ('LONG' or 'SHORT')
+        leverage: Leverage multiplier (default: 1)
 
     Returns:
-        PnL percentage
+        PnL percentage (with leverage applied)
     """
     if side == "LONG":
-        return ((exit_price - entry_price) / entry_price) * 100
+        price_change_pct = ((exit_price - entry_price) / entry_price) * 100
     elif side == "SHORT":
-        return ((entry_price - exit_price) / entry_price) * 100
+        price_change_pct = ((entry_price - exit_price) / entry_price) * 100
     else:
         raise ValueError(f"Invalid side: {side}")
+    
+    # Apply leverage to the price change percentage
+    return price_change_pct * leverage
 
 
 def get_leverage_for_score(score: int) -> int:

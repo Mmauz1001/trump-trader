@@ -1,6 +1,6 @@
 """Database repository for CRUD operations."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy import create_engine, desc
@@ -55,7 +55,7 @@ class DatabaseRepository:
                 content=content,
                 post_id=post_id,
                 posted_at=posted_at,
-                fetched_at=datetime.utcnow(),
+                fetched_at=datetime.now(timezone.utc),
                 engagement_metrics=engagement_metrics,
             )
             session.add(post)
@@ -73,6 +73,16 @@ class DatabaseRepository:
         """Check if post already exists."""
         return self.get_post_by_hash(content_hash) is not None
 
+    def get_recent_posts(self, limit: int = 10) -> List[SocialMediaPost]:
+        """Get recent posts ordered by fetch time."""
+        with self.get_session() as session:
+            return (
+                session.query(SocialMediaPost)
+                .order_by(SocialMediaPost.fetched_at.desc())
+                .limit(limit)
+                .all()
+            )
+
     # Sentiment Analysis
     def create_sentiment(
         self,
@@ -87,7 +97,7 @@ class DatabaseRepository:
                 post_id=post_id,
                 score=score,
                 reasoning=reasoning,
-                analyzed_at=datetime.utcnow(),
+                analyzed_at=datetime.now(timezone.utc),
                 model_version=model_version,
             )
             session.add(sentiment)
@@ -95,6 +105,11 @@ class DatabaseRepository:
             session.refresh(sentiment)
             logger.info(f"Created sentiment analysis: {sentiment.id} with score {score}")
             return sentiment
+
+    def get_sentiment_analysis_by_post_id(self, post_id: int) -> Optional[SentimentAnalysis]:
+        """Get sentiment analysis by post ID."""
+        with self.get_session() as session:
+            return session.query(SentimentAnalysis).filter_by(post_id=post_id).first()
 
     # Trades
     def create_trade(
@@ -128,7 +143,7 @@ class DatabaseRepository:
                 stop_loss_order_id=stop_loss_order_id,
                 trailing_stop_order_id=trailing_stop_order_id,
                 is_open=True,
-                opened_at=datetime.utcnow(),
+                opened_at=datetime.now(timezone.utc),
             )
             session.add(trade)
             session.commit()
@@ -160,12 +175,25 @@ class DatabaseRepository:
                 trade.pnl_percentage = pnl_percentage
                 trade.close_reason = close_reason
                 trade.exit_order_id = exit_order_id
-                trade.closed_at = datetime.utcnow()
+                trade.closed_at = datetime.now(timezone.utc)
                 session.commit()
                 session.refresh(trade)
                 logger.info(f"Closed trade {trade_id}: PnL {pnl_percentage:.2f}%")
             return trade
 
+    def get_trade_by_id(self, trade_id: int) -> Optional[Trade]:
+        """
+        Get a specific trade by ID.
+        
+        Args:
+            trade_id: The trade ID to retrieve
+            
+        Returns:
+            Trade object or None if not found
+        """
+        with self.get_session() as session:
+            return session.query(Trade).filter(Trade.id == trade_id).first()
+    
     def get_recent_trades(self, limit: int = 10) -> List[Trade]:
         """Get recent trades ordered by opening time."""
         with self.get_session() as session:
@@ -175,8 +203,30 @@ class DatabaseRepository:
                 .limit(limit)
                 .all()
             )
+    
+    def get_trades_last_24h(self) -> List[Trade]:
+        """
+        Get all trades closed in the last 24 hours.
+        
+        Returns:
+            List of Trade objects closed in the last 24 hours
+        """
+        from datetime import datetime, timedelta
+        with self.get_session() as session:
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
+            return (
+                session.query(Trade)
+                .filter(Trade.is_open == False)
+                .filter(Trade.closed_at >= cutoff_time)
+                .all()
+            )
 
     # System Logs
+    def get_total_trades_count(self) -> int:
+        """Get total number of trades in the database."""
+        with self.get_session() as session:
+            return session.query(Trade).count()
+
     def create_log(
         self,
         level: str,
@@ -191,7 +241,7 @@ class DatabaseRepository:
                 module=module,
                 message=message,
                 exception=exception,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
             session.add(log)
             session.commit()

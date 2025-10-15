@@ -13,7 +13,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()
@@ -92,6 +92,10 @@ class Trade(Base):
     entry_order_id = Column(String(100), nullable=True)
     stop_loss_order_id = Column(String(100), nullable=True)
     trailing_stop_order_id = Column(String(100), nullable=True)
+    
+    # Fee details
+    entry_fee = Column(Float, nullable=True, default=0.0)
+    total_fees = Column(Float, nullable=True, default=0.0)
     
     # Position status
     is_open = Column(Boolean, nullable=False, default=True)

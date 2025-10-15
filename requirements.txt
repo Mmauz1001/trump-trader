@@ -4,12 +4,13 @@ pydantic==2.10.3
 pydantic-settings==2.6.1
 
 # Social Media Monitoring
-tweepy==4.14.0
 requests==2.32.3
+websocket-client==1.9.0
+websockets==13.1
 beautifulsoup4==4.12.3
 
 # Sentiment Analysis
-anthropic==0.39.0
+anthropic==0.40.0
 
 # Trading
 python-binance==1.0.19

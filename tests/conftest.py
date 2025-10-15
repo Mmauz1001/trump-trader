@@ -15,7 +15,7 @@ def setup_test_environment():
     os.environ["TRUMP_TWITTER_USER_ID"] = "25073877"
     
     os.environ["SCRAPECREATORS_API_KEY"] = "test_scrape_key"
-    os.environ["TRUTHSOCIAL_USERNAME"] = "realDonaldTrump"
+    # Truth Social removed - using only Twitter RapidAPI
     
     os.environ["ANTHROPIC_API_KEY"] = "test_anthropic_key"
     
@@ -29,7 +29,7 @@ def setup_test_environment():
     os.environ["DATABASE_URL"] = "postgresql://trump_trader:trump_trader_password@localhost:5432/trump_trader_test"
     os.environ["REDIS_URL"] = "redis://localhost:6379/1"
     
-    os.environ["DRY_RUN_MODE"] = "true"
+    # DRY_RUN_MODE removed - using BINANCE_TESTNET instead
     os.environ["LOG_LEVEL"] = "ERROR"  # Reduce log noise in tests
     
     yield

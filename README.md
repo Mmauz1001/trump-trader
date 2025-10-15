@@ -1,54 +1,59 @@
-# Trump Social Media Trading Bot
+# Trump Twitter Trading Bot
 
-Automated cryptocurrency trading system that monitors Donald Trump's Twitter and Truth Social posts, analyzes sentiment using Claude AI, and executes leveraged BTC futures trades on Binance with dynamic risk management.
+Automated cryptocurrency trading system that monitors Donald Trump's Twitter posts via RapidAPI, analyzes sentiment using Claude AI, and executes leveraged BTC futures trades on Binance with dynamic risk management.
 
-## System Architecture
+## 🎯 System Overview
+
+This bot:
+1. **Monitors** @realDonaldTrump on Twitter (via RapidAPI Twitter241)
+2. **Analyzes** post sentiment using Claude AI (0-10 scale)
+3. **Executes** BTC futures trades on Binance with dynamic leverage
+4. **Manages** risk with dual stop-loss strategy
+5. **Notifies** via Telegram with real-time updates
+
+## 📊 System Architecture
 
 ```mermaid
 graph TB
-    subgraph "Data Sources"
-        A[Twitter API] 
-        B[Truth Social<br/>ScrapeCreators API]
+    subgraph "Data Source"
+        A[Twitter RapidAPI<br/>@realDonaldTrump]
     end
     
     subgraph "Core System"
-        C[Social Media Monitor]
-        D[Sentiment Analyzer<br/>Claude API]
+        C[Twitter Monitor<br/>Polling every 30s]
+        D[Sentiment Analyzer<br/>Claude Sonnet API]
         E[Trading Engine<br/>Binance Futures]
-        F[Risk Manager]
-        G[Telegram Notifier]
+        F[Risk Manager<br/>Dual Stop-Loss]
+        G[Telegram Bot<br/>Interactive Notifications]
     end
     
     subgraph "Infrastructure"
-        H[(PostgreSQL)]
-        I[(Redis Cache)]
+        H[(PostgreSQL<br/>Trade History)]
     end
     
-    A --> C
-    B --> C
+    A --> |Latest Tweet| C
     C --> |New Post| D
-    D --> |Sentiment Score 0-10| E
+    D --> |Score 0-10| E
     E --> F
     F --> |Execute Trade| E
     E --> H
     C --> H
     D --> H
     E --> G
-    C --> I
     
     style D fill:#f9f,stroke:#333
     style E fill:#ff9,stroke:#333
     style F fill:#f99,stroke:#333
 ```
 
-## Trading Logic
+## 🎮 Trading Logic
 
-### Sentiment Score to Action Mapping
+### Sentiment Score Mapping
 
 ```mermaid
 graph LR
     A[Score < 5] -->|SHORT| B[Open Short Position]
-    C[Score = 5] -->|NEUTRAL| D[Close Any Position<br/>No New Trade]
+    C[Score = 5] -->|NEUTRAL| D[No Position]
     E[Score > 5] -->|LONG| F[Open Long Position]
     
     style B fill:#f99
@@ -56,98 +61,77 @@ graph LR
     style F fill:#9f9
 ```
 
-### Leverage Based on Score
+### Leverage & Risk Map
 
-| Score | Sentiment | Leverage | Position |
-|-------|-----------|----------|----------|
-| 0 | Extreme Bearish | 50x | SHORT |
-| 1 | Very Bearish | 30x | SHORT |
-| 2 | Bearish | 15x | SHORT |
-| 3 | Somewhat Bearish | 10x | SHORT |
-| 4 | Slightly Bearish | 3x | SHORT |
-| **5** | **Neutral** | **0x** | **NO POSITION** |
-| 6 | Slightly Bullish | 3x | LONG |
-| 7 | Somewhat Bullish | 10x | LONG |
-| 8 | Bullish | 15x | LONG |
-| 9 | Very Bullish | 30x | LONG |
-| 10 | Extreme Bullish | 50x | LONG |
+| Score | Sentiment | Leverage | Position | Trailing Stop |
+|-------|-----------|----------|----------|---------------|
+| 0 | Extreme Bearish | 50x | SHORT | 0.5% |
+| 1 | Very Bearish | 30x | SHORT | 0.75% |
+| 2 | Bearish | 15x | SHORT | 1.0% |
+| 3 | Moderately Bearish | 10x | SHORT | 1.5% |
+| 4 | Slightly Bearish | 3x | SHORT | 2.0% |
+| **5** | **Neutral** | **0x** | **NO POSITION** | **N/A** |
+| 6 | Slightly Bullish | 3x | LONG | 2.0% |
+| 7 | Moderately Bullish | 10x | LONG | 1.5% |
+| 8 | Bullish | 15x | LONG | 1.0% |
+| 9 | Very Bullish | 30x | LONG | 0.75% |
+| 10 | Extreme Bullish | 50x | LONG | 0.5% |
 
 ### Risk Management
 
-```mermaid
-graph TD
-    A[New Signal] --> B{Check Open Position}
-    B -->|Yes| C[Close Existing Position]
-    B -->|No| D[Calculate Position Size]
-    C --> D
-    D --> E[Set Leverage Based on Score]
-    E --> F[Open Position<br/>100% of Balance]
-    F --> G[Place Fixed Stop-Loss<br/>1% Max Loss]
-    F --> H[Place Trailing Stop<br/>0.5-2% Callback]
-    
-    style G fill:#f99
-    style H fill:#9f9
-```
+**Position Rules:**
+- ✅ Only **ONE** position open at a time
+- ✅ Uses **100%** of available balance per trade
+- ✅ New signals are **skipped** if position is open
+- ✅ Positions close via **trailing stop only**
 
-**Risk Limits:**
-- **Fixed Stop-Loss:** Maximum 1% account loss per trade
-- **Trailing Stop Callback:** Maximum 2% for all leverage levels
-- **Position Management:** Only 1 position open at a time
-- **Position Sizing:** 100% of available balance used per trade
+**Stop-Loss Strategy:**
+- 🛡️ **Fixed Stop-Loss:** Maximum 1% account loss
+- 🔄 **Trailing Stop:** Dynamic callback (0.5%-2%) based on leverage
+- 🎯 Higher leverage = Tighter trailing stop
 
-### Dual Stop-Loss Strategy
-
-| Leverage | Fixed SL | Trailing Callback | Max Loss |
-|----------|----------|-------------------|----------|
-| 50x | 1.0% | 0.5% | ~1% |
-| 30x | 1.0% | 0.8% | ~1% |
-| 15x | 1.0% | 1.2% | ~1% |
-| 10x | 1.0% | 1.5% | ~1% |
-| 3x | 1.0% | 2.0% | ~1% |
-
-## Project Structure
+## 🏗️ Project Structure
 
 ```
 trump_trader/
 ├── config/
-│   ├── __init__.py
-│   └── settings.py              # Pydantic settings with validation
+│   └── settings.py              # Pydantic settings
 ├── src/
 │   ├── monitors/
-│   │   ├── twitter_monitor.py   # Real-time Twitter streaming
-│   │   └── truthsocial_scraper.py # ScrapeCreators API integration
+│   │   └── twitter_rapidapi.py  # RapidAPI Twitter monitoring
 │   ├── analysis/
 │   │   └── sentiment_analyzer.py # Claude API sentiment scoring
 │   ├── trading/
-│   │   ├── binance_client.py    # Binance Futures API wrapper
-│   │   ├── position_manager.py  # Position lifecycle management
-│   │   └── risk_manager.py      # Risk calculations & safety
+│   │   ├── binance_client.py    # Binance Futures wrapper
+│   │   └── position_manager.py  # Position lifecycle
 │   ├── notifications/
-│   │   └── telegram_bot.py      # Telegram channel updates
+│   │   └── telegram_notifier.py # Telegram updates
 │   ├── database/
-│   │   ├── models.py            # SQLAlchemy ORM models
+│   │   ├── models.py            # SQLAlchemy models
 │   │   └── repository.py        # Database operations
+│   ├── bot/
+│   │   └── trading_bot.py       # Main orchestrator
 │   └── utils/
-│       ├── logger.py            # Logging configuration
+│       ├── logger.py            # Logging setup
 │       └── helpers.py           # Utility functions
-├── tests/                       # Atomic test suite
-├── docker-compose.yml           # PostgreSQL + Redis
-├── requirements.txt
-└── README.md (this file)
+├── tests/                       # Pytest test suite
+├── telegram_bot_handler.py      # Telegram command handler
+├── main.py                      # CLI entry point
+├── docker-compose.yml           # PostgreSQL
+└── requirements.txt
 ```
 
-## Setup Instructions
+## 🚀 Setup Instructions
 
 ### 1. Prerequisites
 
-- Python 3.11+
+- Python 3.13+
 - Docker & Docker Compose
 - API Keys (see below)
 
 ### 2. Clone and Install
 
 ```bash
-# Clone repository
 cd /Users/siempi/Documents/repo/trump_trader
 
 # Create virtual environment
@@ -161,35 +145,40 @@ pip install -r requirements.txt
 ### 3. Start Infrastructure
 
 ```bash
-# Start PostgreSQL and Redis
+# Start PostgreSQL
 docker-compose up -d
 
-# Verify services are running
+# Verify service is running
 docker-compose ps
 ```
 
 ### 4. Configure Environment
 
-Copy `.env.example` to `.env` and fill in your API keys:
+Create `.env` file with the following:
 
 ```bash
-cp .env.example .env
+# Twitter (via RapidAPI Twitter241)
+RAPIDAPI_KEY=your_rapidapi_key
+RAPIDAPI_HOST=twitter241.p.rapidapi.com
+TRUMP_TWITTER_USER_ID=25073877
+
+# Anthropic Claude
+ANTHROPIC_API_KEY=your_claude_key
+
+# Binance (Live or Testnet)
+BINANCE_API_KEY=your_binance_key
+BINANCE_API_SECRET=your_binance_secret
+BINANCE_TESTNET=false  # Set to true for testnet
+
+# Telegram
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_CHANNEL_ID=your_channel_id
+
+# Database
+DATABASE_URL=postgresql://trump_trader:trump_trader_password@localhost:5432/trump_trader
 ```
 
-Required API keys:
-- **Twitter API:** https://developer.twitter.com/
-- **ScrapeCreators API:** https://scrapecreators.com/
-- **Anthropic Claude API:** https://console.anthropic.com/
-- **Binance Testnet API:** https://testnet.binancefuture.com/
-- **Telegram Bot Token:** via @BotFather
-
-### 5. Initialize Database
-
-```bash
-python -c "from src.database import DatabaseRepository; DatabaseRepository().create_tables()"
-```
-
-### 6. Run Tests
+### 5. Run Tests
 
 ```bash
 # Run all tests
@@ -199,110 +188,129 @@ pytest
 pytest --cov=src --cov-report=html
 ```
 
-### 7. Start Application
+### 6. Start Application
 
 ```bash
-python src/main.py
+# Start main bot
+python main.py start
+
+# In another terminal, start Telegram handler
+python telegram_bot_handler.py
 ```
 
-## Current Implementation Status
+## 📡 API Setup
 
-✅ **Completed:**
-- Project structure and configuration
-- Database models and repository
-- Utility functions with full test coverage
-- Docker infrastructure setup
-- Settings validation with Pydantic
+### 1. RapidAPI (Twitter)
+- Go to: https://rapidapi.com/davethebeast/api/twitter241
+- Subscribe to a plan (Basic: $25/month for 100K requests)
+- Copy your API key
+- Add to `.env`: `RAPIDAPI_KEY`
 
-🚧 **In Progress:**
-- Social media monitors (Twitter + Truth Social)
-- Sentiment analyzer (Claude API integration)
-- Trading engine (Binance Futures)
-- Risk management module
-- Telegram notifications
-- Main application orchestrator
-
-## API Keys Required
-
-### 1. Twitter API
-- Go to: https://developer.twitter.com/
-- Create app and get API keys
-- Minimum tier: Basic ($100/month)
-- Add to `.env`: `TWITTER_BEARER_TOKEN`
-
-### 2. Truth Social (ScrapeCreators)
-- Go to: https://scrapecreators.com/
-- Sign up for API access
-- Add to `.env`: `SCRAPECREATORS_API_KEY`
-
-### 3. Anthropic Claude
+### 2. Anthropic Claude
 - Go to: https://console.anthropic.com/
 - Create API key
 - Model: Claude 3.5 Sonnet
 - Add to `.env`: `ANTHROPIC_API_KEY`
 
-### 4. Binance Testnet
-- Go to: https://testnet.binancefuture.com/
-- Create account and generate API keys
+### 3. Binance
+- **Testnet:** https://testnet.binancefuture.com/
+- **Live:** https://www.binance.com/
 - Enable Futures trading
+- Generate API keys
 - Add to `.env`: `BINANCE_API_KEY`, `BINANCE_API_SECRET`
 
-### 5. Telegram Bot
+### 4. Telegram Bot
 - Message @BotFather on Telegram
-- Create new bot with `/newbot`
+- Create bot with `/newbot`
 - Get bot token
 - Create channel and add bot as admin
 - Get channel ID
 - Add to `.env`: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID`
 
-## Testing
+## 💬 Telegram Commands
 
-Run atomic tests:
+The bot provides an interactive menu with buttons:
+
+- 📊 **Position Details** - View current position with live data
+- ⚙️ **Trading Settings** - View leverage map & risk settings
+- 🔄 **Refresh Data** - Refresh main menu with latest data
+- ❌ **Close Position** - Manually close position (with confirmation)
+
+## 🧪 Testing
+
 ```bash
-# All tests
+# Test API connections
+python main.py test
+
+# Run all tests
 pytest
 
-# Specific test file
-pytest tests/test_utils.py
+# Run specific test file
+pytest tests/test_trading.py
 
-# With coverage
+# With verbose output
+pytest -v
+
+# With coverage report
 pytest --cov=src --cov-report=term-missing
 ```
 
-## Monitoring & Logs
+## 📊 Monitoring
 
 - **Application Logs:** Console output (configurable level)
-- **Database Logs:** `system_logs` table
-- **Telegram Notifications:** Real-time updates in channel
-- **Trade History:** `trades` table with full audit trail
+- **Database:** Full trade history in `trades` table
+- **Telegram:** Real-time notifications with interactive buttons
+- **Position Status:** Live PnL, break-even, liquidation price, margin ratio
 
-## Safety Features
+## 🔒 Safety Features
 
-1. **Dry Run Mode:** Test without real trades (`DRY_RUN_MODE=true`)
-2. **Testnet Support:** Practice with Binance testnet
-3. **Hard Stop-Loss:** Never exceeds 1% account loss
-4. **Leverage Limits:** Maximum 50x, validated in settings
-5. **Single Position:** Only 1 open position at a time
-6. **Circuit Breaker:** Stops after 3 consecutive failures
+1. ✅ **Testnet Support** - Practice with Binance testnet
+2. ✅ **Fixed Stop-Loss** - Never exceeds 1% account loss
+3. ✅ **Trailing Stop** - Locks in profits automatically
+4. ✅ **Single Position** - Only 1 open position at a time
+5. ✅ **Skip Logic** - New signals skipped if position is open
+6. ✅ **Leverage Limits** - Maximum 50x, validated in settings
 
-## Cost Estimates (Monthly)
+## 💰 Cost Estimates (Monthly)
 
 | Service | Cost |
 |---------|------|
-| Twitter API | $100 |
-| ScrapeCreators API | $20-50 |
+| RapidAPI Twitter241 | $25 |
 | Anthropic Claude API | $50-100 |
 | AWS (Tokyo Region) | $50-100 |
-| **Total** | **$220-350/month** |
+| **Total** | **$125-225/month** |
 
-## Emergency Procedures
+## 🛠️ CLI Commands
+
+```bash
+# Test all API connections
+python main.py test
+
+# Start the bot
+python main.py start
+
+# Show bot status
+python main.py status
+
+# Close all positions
+python main.py close-positions
+
+# Send position status to Telegram
+python main.py position-status
+
+# Stop the bot
+python main.py stop
+```
+
+## 🚨 Emergency Procedures
 
 ### Stop Trading Immediately
 ```bash
-# Kill application
-pkill -f "python src/main.py"
+# Kill all processes
+pkill -f "python main.py start"
+pkill -f "telegram_bot_handler.py"
 
-# Close all positions manually via Binance web interface
+# Close positions manually via Binance web interface
 ```
 
 ### Database Backup
@@ -310,18 +318,25 @@ pkill -f "python src/main.py"
 docker exec trump_trader_postgres pg_dump -U trump_trader trump_trader > backup_$(date +%Y%m%d).sql
 ```
 
-## Support & Issues
+## 📈 Production Deployment
 
-For issues or questions, review:
-1. Application logs
-2. `system_logs` database table
-3. Telegram error alerts
+For AWS deployment (Tokyo region):
+1. Use ECS/Fargate for container orchestration
+2. RDS PostgreSQL for database
+3. CloudWatch for logging
+4. Secrets Manager for API keys
+5. Application Load Balancer for high availability
 
-## License
+## ⚠️ Risk Warning
+
+**Trading with leverage carries substantial risk of loss. This system can result in complete loss of capital. Use at your own risk. Never invest more than you can afford to lose.**
+
+## 📝 License
 
 Private - Not for distribution
 
 ---
 
-**⚠️ RISK WARNING:** Trading with leverage carries substantial risk. This system can result in complete loss of capital. Use at your own risk.
-
+**Version:** 1.0.0  
+**Last Updated:** October 2025  
+**Status:** Production Ready 🚀
