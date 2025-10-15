@@ -25,37 +25,129 @@ jobs:
             set -e
             
             echo "🚀 Starting deployment..."
+            echo "=================================================="
             
             # Navigate to project directory
             cd /home/ubuntu/trump_trader
             
-            # Pull latest code
-            echo "📥 Pulling latest code from main branch..."
-            git pull origin main
+            # 1. STOP SERVICES FIRST (clean shutdown)
+            echo "🛑 Stopping services..."
+            sudo systemctl stop trump-trader.service || true
+            sudo systemctl stop trump-trader-telegram.service || true
             
-            # Activate virtual environment
+            # 2. KILL ANY ORPHANED PYTHON PROCESSES
+            echo "🧹 Cleaning up any orphaned processes..."
+            sudo pkill -9 -f "trump_trader.*main.py" || true
+            sudo pkill -9 -f "trump_trader.*telegram_bot_handler.py" || true
+            sleep 2
+            
+            # Verify no processes are running
+            RUNNING_PROCESSES=$(ps aux | grep -E '(main.py|telegram_bot_handler.py)' | grep -v grep || true)
+            if [ ! -z "$RUNNING_PROCESSES" ]; then
+              echo "❌ ERROR: Failed to stop all processes"
+              echo "$RUNNING_PROCESSES"
+              exit 1
+            fi
+            echo "✅ All processes stopped"
+            
+            # 3. BACKUP CURRENT VERSION (in case rollback needed)
+            echo "💾 Creating backup..."
+            BACKUP_DIR="/home/ubuntu/trump_trader_backups"
+            mkdir -p $BACKUP_DIR
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+            cp -r /home/ubuntu/trump_trader/.git/refs/heads/main $BACKUP_DIR/main_${TIMESTAMP} || true
+            
+            # 4. PULL LATEST CODE
+            echo "📥 Pulling latest code from main branch..."
+            git fetch origin
+            git reset --hard origin/main
+            git clean -fd
+            
+            # 5. ACTIVATE VIRTUAL ENVIRONMENT
+            echo "🐍 Activating virtual environment..."
             source venv/bin/activate
             
-            # Install/update dependencies
+            # 6. INSTALL/UPDATE DEPENDENCIES
             echo "📦 Installing dependencies..."
+            pip install --upgrade pip --quiet
             pip install -r requirements.txt --quiet
             
-            # Restart services
-            echo "🔄 Restarting services..."
-            sudo systemctl restart trump-trader.service
-            sudo systemctl restart trump-trader-telegram.service
+            # 7. VERIFY .env.production EXISTS
+            echo "🔍 Verifying configuration..."
+            if [ ! -f ".env.production" ]; then
+              echo "❌ ERROR: .env.production not found!"
+              exit 1
+            fi
+            echo "✅ Configuration verified"
             
-            # Wait for services to start
-            sleep 3
+            # 8. RELOAD SYSTEMD (in case service files changed)
+            echo "🔄 Reloading systemd daemon..."
+            sudo systemctl daemon-reload
             
-            # Check service status
-            echo "✅ Checking service status..."
-            sudo systemctl is-active trump-trader.service
-            sudo systemctl is-active trump-trader-telegram.service
+            # 9. START SERVICES IN CORRECT ORDER
+            echo "▶️  Starting services..."
             
-            echo "🎉 Deployment complete!"
-            echo "📊 Service status:"
-            sudo systemctl status trump-trader.service --no-pager -l | head -10
+            # Start Telegram handler first (no conflicts)
+            sudo systemctl start trump-trader-telegram.service
+            sleep 2
+            
+            # Then start main bot
+            sudo systemctl start trump-trader.service
+            sleep 5
+            
+            # 10. VERIFY SERVICES ARE RUNNING
+            echo "✅ Verifying services..."
+            
+            if ! sudo systemctl is-active --quiet trump-trader-telegram.service; then
+              echo "❌ ERROR: Telegram handler failed to start"
+              sudo journalctl -u trump-trader-telegram.service --no-pager -n 50
+              exit 1
+            fi
+            
+            if ! sudo systemctl is-active --quiet trump-trader.service; then
+              echo "❌ ERROR: Main bot failed to start"
+              sudo journalctl -u trump-trader.service --no-pager -n 50
+              exit 1
+            fi
+            
+            echo "✅ Both services running"
+            
+            # 11. VERIFY NO DUPLICATE PROCESSES
+            echo "🔍 Checking for duplicate processes..."
+            MAIN_PROCS=$(ps aux | grep "main.py" | grep python | grep -v grep | wc -l)
+            TELEGRAM_PROCS=$(ps aux | grep "telegram_bot_handler.py" | grep python | grep -v grep | wc -l)
+            
+            if [ "$MAIN_PROCS" -ne 1 ]; then
+              echo "❌ ERROR: Found $MAIN_PROCS main.py processes (expected 1)"
+              ps aux | grep "main.py" | grep python | grep -v grep
+              exit 1
+            fi
+            
+            if [ "$TELEGRAM_PROCS" -ne 1 ]; then
+              echo "❌ ERROR: Found $TELEGRAM_PROCS telegram_bot_handler processes (expected 1)"
+              ps aux | grep "telegram_bot_handler.py" | grep python | grep -v grep
+              exit 1
+            fi
+            
+            echo "✅ No duplicate processes found"
+            
+            # 12. FINAL STATUS CHECK
+            echo ""
+            echo "=================================================="
+            echo "🎉 DEPLOYMENT SUCCESSFUL!"
+            echo "=================================================="
+            echo ""
+            echo "📊 Service Status:"
+            sudo systemctl status trump-trader.service --no-pager -l | head -15
+            echo ""
+            sudo systemctl status trump-trader-telegram.service --no-pager -l | head -15
+            echo ""
+            echo "🔢 Process Count:"
+            echo "  Main Bot: $MAIN_PROCS process(es)"
+            echo "  Telegram Handler: $TELEGRAM_PROCS process(es)"
+            echo ""
+            echo "✅ Deployment completed successfully at $(date)"
+            echo "=================================================="
             
       - name: Deployment notification
         if: always()
