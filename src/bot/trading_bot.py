@@ -375,6 +375,9 @@ class TradingBot:
         
         # Send startup notification with account info
         try:
+            # Wait a moment for APIs to fully initialize
+            import time
+            time.sleep(2)
             account_info = self._get_account_info()
             self.telegram.notify_startup(account_info)
             logger.info("Startup notification sent with account info")
