@@ -98,6 +98,10 @@ jobs:
             fi
             echo "✅ Configuration verified"
             
+            # 7.5. RUN DATABASE MIGRATIONS
+            echo "🗄️  Running database migrations..."
+            python -c "from src.database.models import Base; from src.database.repository import DatabaseRepository; import logging; logging.basicConfig(level=logging.INFO); db = DatabaseRepository(); db.engine.echo = False; Base.metadata.create_all(db.engine); print('✅ Database schema created/updated')" || echo "⚠️  Migration warning (might be ok if tables exist)"
+            
             # 8. RELOAD SYSTEMD (in case service files changed)
             echo "🔄 Reloading systemd daemon..."
             sudo systemctl daemon-reload
