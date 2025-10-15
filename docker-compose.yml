@@ -1,9 +1,10 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
-    container_name: trump_trader_postgres
+    image: postgres:15-alpine
+    container_name: trump_trader_db
     environment:
       POSTGRES_DB: trump_trader
       POSTGRES_USER: trump_trader
@@ -18,20 +19,43 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: trump_trader_redis
-    ports:
-      - "6379:6379"
+  # Main Trading Bot
+  trading_bot:
+    build: .
+    container_name: trump_trader_main
+    command: python main.py start
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
     volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - ./logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Telegram Bot Handler
+  telegram_handler:
+    build: .
+    container_name: trump_trader_telegram
+    command: python telegram_bot_handler.py
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:
-  redis_data:
-

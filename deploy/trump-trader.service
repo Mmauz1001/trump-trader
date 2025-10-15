@@ -1,0 +1,23 @@
+[Unit]
+Description=Trump Trader Main Bot
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trump_trader
+Environment="PATH=/home/ubuntu/trump_trader/venv/bin:/usr/bin:/bin"
+ExecStart=/home/ubuntu/trump_trader/venv/bin/python /home/ubuntu/trump_trader/main.py start
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/ubuntu/trump_trader/logs/main.log
+StandardError=append:/home/ubuntu/trump_trader/logs/main_error.log
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+
