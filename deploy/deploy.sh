@@ -35,15 +35,8 @@ print_error() {
 
 # Step 1: Install system dependencies
 print_step "Installing system dependencies..."
-sudo apt-get update
-sudo apt-get install -y \
-    python3.13 \
-    python3.13-venv \
-    python3-pip \
-    postgresql-client \
-    git \
-    nginx \
-    supervisor
+sudo apt-get update -qq
+sudo apt-get install -y python3-venv python3-pip postgresql-client git > /dev/null 2>&1
 print_success "System dependencies installed"
 
 # Step 2: Create application directory
@@ -66,11 +59,11 @@ print_success "Code updated"
 # Step 4: Create virtual environment
 print_step "Setting up Python virtual environment..."
 if [ ! -d "$VENV_DIR" ]; then
-    python3.13 -m venv $VENV_DIR
+    python3 -m venv $VENV_DIR
 fi
 source $VENV_DIR/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
+pip install --upgrade pip > /dev/null 2>&1
+pip install -r requirements.txt > /dev/null 2>&1
 print_success "Virtual environment ready"
 
 # Step 5: Set up environment variables
