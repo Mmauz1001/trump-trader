@@ -68,13 +68,13 @@ print_success "Virtual environment ready"
 
 # Step 5: Set up environment variables
 print_step "Configuring environment variables..."
-if [ ! -f "$APP_DIR/.env" ]; then
-    print_error ".env file not found!"
-    echo "Please create .env file with your configuration"
-    echo "You can use .env.example as a template"
+if [ ! -f "$APP_DIR/.env.production" ]; then
+    print_error ".env.production file not found!"
+    echo "Please create .env.production file with your production configuration"
+    echo "You can use example.env as a template"
     exit 1
 fi
-print_success "Environment configured"
+print_success "Environment configured (using .env.production)"
 
 # Step 6: Test database connection
 print_step "Testing database connection..."

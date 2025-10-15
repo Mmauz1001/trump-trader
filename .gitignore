@@ -25,10 +25,12 @@ venv/
 env/
 ENV/
 
-# Environment variables
+# Environment variables - NEVER COMMIT THESE!
 .env
 .env.*
-.env.local
+*.env
+# BUT allow example.env (safe template)
+!example.env
 
 # IDE
 .vscode/

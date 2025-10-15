@@ -8,6 +8,7 @@ Type=simple
 User=ubuntu
 WorkingDirectory=/home/ubuntu/trump_trader
 Environment="PATH=/home/ubuntu/trump_trader/venv/bin:/usr/bin:/bin"
+Environment="APP_ENV=production"
 ExecStart=/home/ubuntu/trump_trader/venv/bin/python /home/ubuntu/trump_trader/main.py start
 Restart=always
 RestartSec=10

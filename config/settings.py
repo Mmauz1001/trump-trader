@@ -1,14 +1,36 @@
 """Application configuration management using Pydantic settings."""
 
+import os
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def get_env_file() -> str:
+    """
+    Determine which env file to load based on APP_ENV variable.
+    
+    Standard naming convention: .env.<environment>
+    
+    Priority:
+    1. APP_ENV=production -> .env.production
+    2. APP_ENV=local -> .env.local
+    3. Default -> .env (for backward compatibility)
+    """
+    app_env = os.getenv("APP_ENV", "default")
+    
+    if app_env == "production":
+        return ".env.production"
+    elif app_env == "local":
+        return ".env.local"
+    else:
+        return ".env"
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=get_env_file(),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
