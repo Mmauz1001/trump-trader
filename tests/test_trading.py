@@ -448,6 +448,7 @@ class TestPositionManager:
         mock_binance.place_market_order.return_value = {"orderId": "123456"}
         mock_binance.place_stop_loss_order.return_value = {"orderId": "789012"}
         mock_binance.place_trailing_stop_order.return_value = {"orderId": "345678"}
+        mock_binance.get_order_fees.return_value = [{"commission": "0.5", "commissionAsset": "USDT"}]
         
         # Mock database
         mock_db = Mock()
@@ -463,7 +464,7 @@ class TestPositionManager:
             mock_settings.binance_testnet = False
             
             trade_params = {
-                "side": "BUY",
+                "side": "LONG",  # Use LONG/SHORT as expected by execute_trade
                 "leverage": 10,
                 "position_size": 0.1,
                 "current_price": 50000.0,
@@ -476,7 +477,7 @@ class TestPositionManager:
             result = manager.execute_trade(trade_params, 1)
             
             assert result is not None
-            assert result["side"] == "BUY"
+            assert result["side"] == "BUY"  # Should be converted to BUY
             assert result["leverage"] == 10
             assert result["orders"]["market"] == "123456"
             assert result["orders"]["stop_loss"] == "789012"
