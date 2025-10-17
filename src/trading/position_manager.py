@@ -164,7 +164,7 @@ class PositionManager:
             # 5. Place stop-loss order
             logger.info("Placing stop-loss order...")
             stop_loss_order = self.binance.place_stop_loss_order(
-                side="SELL" if trade_params['side'] == "BUY" else "BUY",
+                side="SELL" if trade_params['side'] == "LONG" else "BUY",
                 quantity=trade_params['position_size'],
                 stop_price=trade_params['stop_loss_price']
             )
@@ -172,7 +172,7 @@ class PositionManager:
             # 6. Place trailing stop order
             logger.info("Placing trailing stop order...")
             trailing_stop_order = self.binance.place_trailing_stop_order(
-                side="SELL" if trade_params['side'] == "BUY" else "BUY",
+                side="SELL" if trade_params['side'] == "LONG" else "BUY",
                 quantity=trade_params['position_size'],
                 callback_rate=trade_params['callback_rate']
             )
@@ -195,13 +195,24 @@ class PositionManager:
             
             logger.info(f"✅ Trade executed successfully: {trade.id}")
             
+            # Convert LONG/SHORT to BUY/SELL for Telegram notification
+            binance_side = "BUY" if trade_params['side'] == "LONG" else "SELL"
+            
+            # Get fees from market order
+            order_fees = self.binance.get_order_fees(market_order['orderId'])
+            total_fees = sum(float(fee['commission']) for fee in order_fees) if order_fees else 0
+            
             return {
                 "trade_id": trade.id,
-                "side": trade_params['side'],
+                "side": binance_side,  # Use BUY/SELL for consistency
                 "leverage": trade_params['leverage'],
                 "entry_price": trade_params['current_price'],
                 "position_size": trade_params['position_size'],
                 "sentiment_score": trade_params['sentiment_score'],
+                "stop_loss_price": trade_params['stop_loss_price'],
+                "callback_rate": trade_params['callback_rate'],
+                "fees": total_fees,
+                "order_id": str(market_order['orderId']),
                 "orders": {
                     "market": market_order['orderId'],
                     "stop_loss": stop_loss_order['orderId'] if stop_loss_order else None,
