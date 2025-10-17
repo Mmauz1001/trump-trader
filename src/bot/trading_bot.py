@@ -333,11 +333,27 @@ class TradingBot:
             if self.twitter_monitor:
                 twitter_status = self.twitter_monitor.get_monitoring_status()
                 twitter_rate_limit = twitter_status.get("rate_limit", {})
+                
+                # If rate limits are empty, trigger a test connection to populate them
+                if not twitter_rate_limit.get("remaining"):
+                    logger.info("Twitter rate limits empty, triggering test connection...")
+                    self.twitter_monitor.test_connection()
+                    twitter_status = self.twitter_monitor.get_monitoring_status()
+                    twitter_rate_limit = twitter_status.get("rate_limit", {})
+                
                 logger.info(f"Twitter rate limit for startup: {twitter_rate_limit}")
             
             if self.truthsocial_monitor:
                 truthsocial_status = self.truthsocial_monitor.get_monitoring_status()
                 truthsocial_rate_limit = truthsocial_status.get("rate_limit", {})
+                
+                # If rate limits are empty, trigger a test connection to populate them
+                if not truthsocial_rate_limit.get("remaining"):
+                    logger.info("Truth Social rate limits empty, triggering test connection...")
+                    self.truthsocial_monitor.test_connection()
+                    truthsocial_status = self.truthsocial_monitor.get_monitoring_status()
+                    truthsocial_rate_limit = truthsocial_status.get("rate_limit", {})
+                
                 logger.info(f"Truth Social rate limit for startup: {truthsocial_rate_limit}")
             
             return {
