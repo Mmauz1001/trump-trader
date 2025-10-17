@@ -819,17 +819,25 @@ Choose wisely:"""
             
             # Format rate limit info
             rate_limit_text = ""
-            if twitter_rate_limit.get("remaining") and twitter_rate_limit.get("limit"):
-                tw_remaining = twitter_rate_limit["remaining"]
-                tw_limit = twitter_rate_limit["limit"]
-                tw_pct = (int(tw_remaining) / int(tw_limit)) * 100
-                rate_limit_text += f"\n   📊 Twitter: {tw_remaining}/{tw_limit} ({tw_pct:.0f}%)"
+            has_rate_limits = (
+                (twitter_rate_limit.get("remaining") and twitter_rate_limit.get("limit")) or
+                (truthsocial_rate_limit.get("remaining") and truthsocial_rate_limit.get("limit"))
+            )
             
-            if truthsocial_rate_limit.get("remaining") and truthsocial_rate_limit.get("limit"):
-                ts_remaining = truthsocial_rate_limit["remaining"]
-                ts_limit = truthsocial_rate_limit["limit"]
-                ts_pct = (int(ts_remaining) / int(ts_limit)) * 100
-                rate_limit_text += f"\n   📊 Truth Social: {ts_remaining}/{ts_limit} ({ts_pct:.0f}%)"
+            if has_rate_limits:
+                rate_limit_text += "\n\n📊 <b>API RATE LIMITS</b>"
+                
+                if twitter_rate_limit.get("remaining") and twitter_rate_limit.get("limit"):
+                    tw_remaining = twitter_rate_limit["remaining"]
+                    tw_limit = twitter_rate_limit["limit"]
+                    tw_pct = (int(tw_remaining) / int(tw_limit)) * 100
+                    rate_limit_text += f"\n   🐦 Twitter: {tw_remaining}/{tw_limit} ({tw_pct:.0f}%)"
+                
+                if truthsocial_rate_limit.get("remaining") and truthsocial_rate_limit.get("limit"):
+                    ts_remaining = truthsocial_rate_limit["remaining"]
+                    ts_limit = truthsocial_rate_limit["limit"]
+                    ts_pct = (int(ts_remaining) / int(ts_limit)) * 100
+                    rate_limit_text += f"\n   🇺🇸 Truth Social: {ts_remaining}/{ts_limit} ({ts_pct:.0f}%)"
             
             message = f"""🚀 <b>TRUMP TRADER BOT STARTED</b>
 
@@ -849,8 +857,7 @@ Choose wisely:"""
 
 🔍 <b>Monitoring:</b> Twitter + Truth Social (30s)
 🤖 <b>AI Analysis:</b> Claude 3.5 Sonnet
-📱 <b>Notifications:</b> Telegram
-{rate_limit_text}
+📱 <b>Notifications:</b> Telegram{rate_limit_text}
 
 ⏰ <b>Started:</b> {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}
 
