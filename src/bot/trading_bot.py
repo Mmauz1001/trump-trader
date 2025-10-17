@@ -333,10 +333,12 @@ class TradingBot:
             if self.twitter_monitor:
                 twitter_status = self.twitter_monitor.get_monitoring_status()
                 twitter_rate_limit = twitter_status.get("rate_limit", {})
+                logger.info(f"Twitter rate limit for startup: {twitter_rate_limit}")
             
             if self.truthsocial_monitor:
                 truthsocial_status = self.truthsocial_monitor.get_monitoring_status()
                 truthsocial_rate_limit = truthsocial_status.get("rate_limit", {})
+                logger.info(f"Truth Social rate limit for startup: {truthsocial_rate_limit}")
             
             return {
                 "balance": float(balance),
