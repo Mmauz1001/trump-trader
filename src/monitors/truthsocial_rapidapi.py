@@ -199,7 +199,7 @@ class TruthSocialRapidAPI:
     def _start_polling_monitoring(self) -> None:
         """Start polling-based monitoring for posts."""
         def polling_worker():
-            logger.info("🚀 Truth Social polling monitoring started - checking latest post every 5 minutes")
+            logger.info("🚀 Truth Social polling monitoring started - checking latest post every 30 seconds")
             last_post_id = None
             
             while self.is_monitoring:
@@ -226,12 +226,12 @@ class TruthSocialRapidAPI:
                         if posts:
                             last_post_id = posts[0]["id"]
                     
-                    # Wait 5 minutes before next check (Truth Social posts less frequently)
-                    time.sleep(300)
+                    # Wait 30 seconds before next check (same as Twitter)
+                    time.sleep(30)
                     
                 except Exception as e:
                     logger.error(f"Error in polling monitoring: {e}")
-                    time.sleep(300)  # Wait before retrying
+                    time.sleep(30)  # Wait before retrying
         
         # Start polling in a separate thread
         polling_thread = threading.Thread(target=polling_worker, name="TruthSocialPolling")
@@ -250,7 +250,7 @@ class TruthSocialRapidAPI:
             "platform": "TRUTH_SOCIAL",
             "method": "RapidAPI Polling",
             "real_time": False,
-            "polling_interval": "5 minutes",
+            "polling_interval": "30 seconds",
             "last_check": get_timestamp()
         }
 

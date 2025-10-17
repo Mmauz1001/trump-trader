@@ -20,7 +20,7 @@ from src.monitors.truthsocial_rapidapi import TruthSocialRapidAPI as TruthSocial
 TWITTER_AVAILABLE = True
 TWITTER_METHOD = "RapidAPI (30s)"
 TRUTH_SOCIAL_AVAILABLE = True
-TRUTH_SOCIAL_METHOD = "RapidAPI (5min)"
+TRUTH_SOCIAL_METHOD = "RapidAPI (30s)"
 from src.notifications.telegram_notifier import TelegramNotifier
 from src.trading.position_manager import PositionManager
 from src.utils import setup_logger
