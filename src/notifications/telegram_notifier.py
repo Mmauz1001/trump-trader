@@ -831,13 +831,15 @@ Choose wisely:"""
                     tw_remaining = twitter_rate_limit["remaining"]
                     tw_limit = twitter_rate_limit["limit"]
                     tw_pct = (int(tw_remaining) / int(tw_limit)) * 100
-                    rate_limit_text += f"\n   🐦 Twitter: {tw_remaining}/{tw_limit} ({tw_pct:.0f}%)"
+                    # Use ⁄ (fraction slash) instead of / to prevent phone number auto-linking
+                    rate_limit_text += f"\n   🐦 Twitter: {tw_remaining}⁄{tw_limit} ({tw_pct:.0f}%)"
                 
                 if truthsocial_rate_limit.get("remaining") and truthsocial_rate_limit.get("limit"):
                     ts_remaining = truthsocial_rate_limit["remaining"]
                     ts_limit = truthsocial_rate_limit["limit"]
                     ts_pct = (int(ts_remaining) / int(ts_limit)) * 100
-                    rate_limit_text += f"\n   🇺🇸 Truth Social: {ts_remaining}/{ts_limit} ({ts_pct:.0f}%)"
+                    # Use ⁄ (fraction slash) instead of / to prevent phone number auto-linking
+                    rate_limit_text += f"\n   🇺🇸 Truth Social: {ts_remaining}⁄{ts_limit} ({ts_pct:.0f}%)"
             
             message = f"""🚀 <b>TRUMP TRADER BOT STARTED</b>
 
