@@ -108,9 +108,12 @@ class BinanceClient:
                     unrealized_pnl = float(pos["unRealizedProfit"])
                     entry_price = float(pos["entryPrice"])
                     notional = abs(float(pos["positionAmt"]) * entry_price)
+                    leverage = int(pos["leverage"])
                     
-                    # Calculate PnL percentage from actual Binance PnL
-                    pnl_percentage = (unrealized_pnl / notional * 100) if notional > 0 else 0
+                    # Calculate margin and PnL percentage (ROI)
+                    # ROI% = (PnL / Margin) * 100, where Margin = Notional / Leverage
+                    margin = notional / leverage if leverage > 0 else notional
+                    pnl_percentage = (unrealized_pnl / margin * 100) if margin > 0 else 0
                     
                     open_positions.append({
                         "symbol": pos["symbol"],
@@ -160,20 +163,15 @@ class BinanceClient:
                     notional = abs(position_amt * entry_price)
                     leverage = int(pos["leverage"])
                     
-                    # Calculate PnL percentage (ROI)
-                    pnl_percentage = (unrealized_pnl / notional * 100) if notional > 0 else 0
-                    
                     # Calculate margin (notional / leverage)
                     margin = notional / leverage if leverage > 0 else notional
                     
-                    # Calculate break-even price (entry + fees)
-                    # Binance futures taker fee: 0.05%, maker fee: 0.02%
-                    # Assuming taker fee for both entry and exit
-                    fee_rate = 0.0005  # 0.05%
-                    if position_amt > 0:  # LONG
-                        breakeven_price = entry_price * (1 + fee_rate * 2)
-                    else:  # SHORT
-                        breakeven_price = entry_price * (1 - fee_rate * 2)
+                    # Calculate PnL percentage (ROI) = (PnL / Margin) * 100
+                    # This matches Binance's ROI% calculation
+                    pnl_percentage = (unrealized_pnl / margin * 100) if margin > 0 else 0
+                    
+                    # Use Binance's calculated break-even price (includes fees and funding)
+                    breakeven_price = float(pos.get("breakEvenPrice", entry_price))
                     
                     return {
                         "symbol": pos["symbol"],
