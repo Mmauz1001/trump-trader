@@ -336,7 +336,7 @@ class TestTradingBot:
         bot.start_monitoring()
         
         assert bot.is_running is True
-        assert len(bot.monitoring_threads) == 1
+        assert len(bot.monitoring_threads) == 2  # Twitter + Truth Social
 
     @patch('src.bot.trading_bot.TwitterMonitor')
     @patch('src.bot.trading_bot.SentimentAnalyzer')

@@ -344,6 +344,7 @@ class TestTruthSocialMonitor:
         # Mock response with complex HTML
         mock_response = Mock()
         mock_response.status_code = 200
+        mock_response.text = '[{"id":"123",...}]'
         mock_response.json.return_value = [
             {
                 "id": "123",

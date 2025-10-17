@@ -11,8 +11,12 @@ from src.trading.position_manager import PositionManager
 class TestBinanceClient:
     """Test Binance client functionality."""
 
-    def test_init(self):
+    @patch('src.trading.binance_client.Client')
+    def test_init(self, mock_client_class):
         """Test Binance client initialization."""
+        mock_client = Mock()
+        mock_client_class.return_value = mock_client
+        
         client = BinanceClient()
         assert client.client is not None
         assert client.symbol == "BTCUSDT"
@@ -275,30 +279,46 @@ class TestBinanceClient:
 class TestPositionManager:
     """Test position manager functionality."""
 
-    def test_init(self):
+    @patch('src.trading.position_manager.BinanceClient')
+    def test_init(self, mock_binance_class):
         """Test position manager initialization."""
+        mock_binance = Mock()
+        mock_binance_class.return_value = mock_binance
+        
         manager = PositionManager()
         assert manager.binance is not None
         assert manager.db is not None
 
-    def test_should_trade_bullish(self):
+    @patch('src.trading.position_manager.BinanceClient')
+    def test_should_trade_bullish(self, mock_binance_class):
         """Test should trade with bullish sentiment."""
+        mock_binance = Mock()
+        mock_binance_class.return_value = mock_binance
+        
         manager = PositionManager()
         should_trade, reason = manager.should_trade(8)
         
         assert should_trade is True
         assert "Bullish sentiment" in reason
 
-    def test_should_trade_bearish(self):
+    @patch('src.trading.position_manager.BinanceClient')
+    def test_should_trade_bearish(self, mock_binance_class):
         """Test should trade with bearish sentiment."""
+        mock_binance = Mock()
+        mock_binance_class.return_value = mock_binance
+        
         manager = PositionManager()
         should_trade, reason = manager.should_trade(2)
         
         assert should_trade is True
         assert "Bearish sentiment" in reason
 
-    def test_should_trade_neutral(self):
+    @patch('src.trading.position_manager.BinanceClient')
+    def test_should_trade_neutral(self, mock_binance_class):
         """Test should not trade with neutral sentiment."""
+        mock_binance = Mock()
+        mock_binance_class.return_value = mock_binance
+        
         manager = PositionManager()
         should_trade, reason = manager.should_trade(5)
         
