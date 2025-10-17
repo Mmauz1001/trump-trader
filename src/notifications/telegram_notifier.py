@@ -619,6 +619,7 @@ Choose wisely:"""
             stop_loss_price = position_data.get("stop_loss_price", 0)
             stop_loss_active = position_data.get("stop_loss_active", False)
             trailing_callback_rate = position_data.get("trailing_callback_rate", 0)
+            trailing_stop_price_from_binance = position_data.get("trailing_stop_price")
             trailing_stop_active = position_data.get("trailing_stop_active", False)
             fees = position_data.get("fees", 0)
             funding_fee = position_data.get("funding_fee", 0)
@@ -645,16 +646,19 @@ Choose wisely:"""
             else:
                 price_emoji = "➖"
             
-            # Calculate actual trailing stop price
-            if trailing_callback_rate > 0:
+            # Use actual trailing stop price from Binance if available, otherwise calculate
+            if trailing_stop_price_from_binance:
+                # Use real price from Binance order
+                trailing_stop_price = trailing_stop_price_from_binance
+                trailing_stop_distance = abs(trailing_stop_price - current_price) / current_price * 100
+                trailing_stop_text = f"${trailing_stop_price:,.2f} ({trailing_stop_distance:.2f}% away)"
+            elif trailing_callback_rate > 0:
+                # Calculate estimated price if order doesn't exist
                 if side == "LONG":
-                    # For LONG: trailing stop moves up with price, triggers if price drops by callback rate
                     trailing_stop_price = current_price * (1 - trailing_callback_rate / 100)
                 else:  # SHORT
-                    # For SHORT: trailing stop moves down with price, triggers if price rises by callback rate
                     trailing_stop_price = current_price * (1 + trailing_callback_rate / 100)
                 
-                # Calculate distance from current price
                 trailing_stop_distance = abs(trailing_stop_price - current_price) / current_price * 100
                 trailing_stop_text = f"${trailing_stop_price:,.2f} ({trailing_stop_distance:.2f}% away)"
             else:

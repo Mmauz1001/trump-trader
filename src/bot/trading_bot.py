@@ -231,12 +231,14 @@ class TradingBot:
                     stop_loss_price = open_trade.fixed_stop_loss_price
                     stop_loss_active = False
                 
-                # Use actual trailing stop callback rate if order exists, otherwise use database value
+                # Use actual trailing stop data if order exists, otherwise use database value
                 if stop_orders["trailing_stop"]:
                     trailing_callback_rate = stop_orders["trailing_stop"]["callback_rate"]
+                    trailing_stop_price = stop_orders["trailing_stop"]["stop_price"]
                     trailing_stop_active = True
                 else:
                     trailing_callback_rate = open_trade.trailing_callback_rate
+                    trailing_stop_price = None  # Calculate it in Telegram notifier
                     trailing_stop_active = False
                 
                 position_data = {
@@ -252,6 +254,7 @@ class TradingBot:
                     "stop_loss_price": stop_loss_price,
                     "stop_loss_active": stop_loss_active,
                     "trailing_callback_rate": trailing_callback_rate,
+                    "trailing_stop_price": trailing_stop_price,
                     "trailing_stop_active": trailing_stop_active,
                     "fees": fees,
                     "funding_fee": funding_fee,

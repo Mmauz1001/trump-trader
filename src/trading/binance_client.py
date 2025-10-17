@@ -300,7 +300,8 @@ class BinanceClient:
                     trailing_stop_order = {
                         "order_id": order['orderId'],
                         "activation_price": float(order.get('activatePrice', 0)),
-                        "callback_rate": float(order.get('priceRate', 0)) * 100,  # Convert to percentage
+                        "callback_rate": float(order.get('priceRate', 0)),  # Already in percentage (e.g., 1.5)
+                        "stop_price": float(order.get('stopPrice', 0)),  # Current trailing stop price from Binance
                         "side": order['side'],
                         "quantity": float(order['origQty'])
                     }
