@@ -829,7 +829,7 @@ Choose wisely:"""
    📈 Total Trades: {total_trades}
    {pnl_emoji} 24h PnL: {pnl_text}
 
-🔍 <b>Monitoring:</b> Twitter (30s intervals)
+🔍 <b>Monitoring:</b> Twitter + Truth Social (30s intervals)
 🤖 <b>AI Analysis:</b> Claude 3.5 Sonnet
 📱 <b>Notifications:</b> Telegram
 
