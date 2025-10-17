@@ -13,11 +13,14 @@ except (ImportError, ModuleNotFoundError, TypeError):
     SENTIMENT_AVAILABLE = False
     SentimentAnalyzer = None
 from src.database.repository import DatabaseRepository
-# ONLY Twitter RapidAPI - No fallbacks, no workarounds
+# Twitter and Truth Social via RapidAPI
 from src.monitors.twitter_rapidapi import TwitterRapidAPI as TwitterMonitor
+from src.monitors.truthsocial_rapidapi import TruthSocialRapidAPI as TruthSocialMonitor
 
 TWITTER_AVAILABLE = True
 TWITTER_METHOD = "RapidAPI (30s)"
+TRUTH_SOCIAL_AVAILABLE = True
+TRUTH_SOCIAL_METHOD = "RapidAPI (5min)"
 from src.notifications.telegram_notifier import TelegramNotifier
 from src.trading.position_manager import PositionManager
 from src.utils import setup_logger
@@ -45,12 +48,12 @@ class TradingBot:
         self.position_manager = PositionManager()
         self.telegram = TelegramNotifier()
         
-        # ONLY Twitter RapidAPI - No fallbacks, no workarounds
+        # Twitter and Truth Social via RapidAPI
         self.twitter_monitor = TwitterMonitor(on_new_post=self._on_new_post)
         logger.info(f"Using Twitter monitor: {TWITTER_METHOD}")
         
-        # Truth Social removed entirely
-        self.truthsocial_monitor = None
+        self.truthsocial_monitor = TruthSocialMonitor(on_new_post=self._on_new_post)
+        logger.info(f"Using Truth Social monitor: {TRUTH_SOCIAL_METHOD}")
         
         # Bot state
         self.is_running = False
@@ -64,6 +67,7 @@ class TradingBot:
         
         results = {
             "twitter": self.twitter_monitor.test_connection() if self.twitter_monitor else False,
+            "truth_social": self.truthsocial_monitor.test_connection() if self.truthsocial_monitor else False,
             "claude": self.sentiment_analyzer.test_connection() if self.sentiment_analyzer else False,
             "binance": self.position_manager.binance.test_connection(),
             "telegram": self.telegram.test_connection()
@@ -402,9 +406,20 @@ class TradingBot:
         else:
             logger.warning("Twitter monitoring not available")
         
-        # Truth Social removed entirely
+        # Truth Social monitoring
+        if self.truthsocial_monitor:
+            truthsocial_thread = threading.Thread(
+                target=self.truthsocial_monitor.start_monitoring,
+                name="TruthSocialMonitor"
+            )
+            truthsocial_thread.daemon = True
+            truthsocial_thread.start()
+            self.monitoring_threads.append(truthsocial_thread)
+            logger.info("Truth Social monitoring started")
+        else:
+            logger.warning("Truth Social monitoring not available")
         
-        logger.info("🚀 Social media monitoring started")
+        logger.info("🚀 Social media monitoring started (Twitter + Truth Social)")
         logger.info("Bot is now running and monitoring for new posts...")
 
     def stop_monitoring(self) -> None:
@@ -416,8 +431,10 @@ class TradingBot:
         logger.info("Stopping social media monitoring...")
         
         # Stop monitors
-        self.twitter_monitor.stop_monitoring()
-        # Truth Social removed entirely
+        if self.twitter_monitor:
+            self.twitter_monitor.stop_monitoring()
+        if self.truthsocial_monitor:
+            self.truthsocial_monitor.stop_monitoring()
         
         # Wait for threads to finish
         for thread in self.monitoring_threads:

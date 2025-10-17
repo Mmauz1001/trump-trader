@@ -36,9 +36,18 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # Twitter (via RapidAPI)
+    # Social Media Monitoring (via RapidAPI)
+    # Twitter
     trump_twitter_user_id: str = Field(
         default="25073877", description="Trump's Twitter user ID"
+    )
+    # Truth Social
+    trump_truth_social_username: str = Field(
+        default="realDonaldTrump", description="Trump's Truth Social username"
+    )
+    truth_social_rapidapi_host: str = Field(
+        default="truth-social-api.p.rapidapi.com", 
+        description="RapidAPI host for Truth Social"
     )
 
     # Anthropic Claude

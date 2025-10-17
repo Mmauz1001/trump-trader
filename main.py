@@ -109,7 +109,7 @@ def start_bot(bot: TradingBot) -> None:
         logger.error("Claude API not available - REQUIRED")
         sys.exit(1)
     
-    logger.info("✅ All required services available - ONLY Twitter RapidAPI")
+    logger.info("✅ All required services available - Twitter + Truth Social via RapidAPI")
     
     # Start monitoring
     bot.start_monitoring()
