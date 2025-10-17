@@ -165,7 +165,20 @@ class TelegramNotifier:
             else:
                 posted_at = created_at
             
-            timestamp = posted_at.strftime("%Y-%m-%d %H:%M:%S UTC")
+            post_timestamp = posted_at.strftime("%Y-%m-%d %H:%M:%S UTC")
+            
+            # Calculate processing time
+            now = datetime.now(timezone.utc)
+            processing_timestamp = now.strftime("%Y-%m-%d %H:%M:%S UTC")
+            
+            # Calculate delay
+            delay_seconds = (now - posted_at).total_seconds()
+            if delay_seconds < 60:
+                delay_text = f"{delay_seconds:.0f}s"
+            elif delay_seconds < 3600:
+                delay_text = f"{delay_seconds/60:.1f}m"
+            else:
+                delay_text = f"{delay_seconds/3600:.1f}h"
             
             # Show full content (Telegram supports up to 4096 characters)
             if len(content) > 3000:  # Leave room for sentiment analysis
@@ -188,8 +201,9 @@ class TelegramNotifier:
             # Create message
             message = f"""🚨 <b>NEW {platform} POST</b>
 
-📅 <b>Time:</b> {timestamp}
+📅 <b>Posted:</b> {post_timestamp}
 📱 <b>Platform:</b> {platform}
+⚡ <b>Processed:</b> {processing_timestamp} ({delay_text} delay)
 
 📝 <b>Full Post:</b>
 {content}
