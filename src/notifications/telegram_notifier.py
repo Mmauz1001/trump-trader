@@ -456,12 +456,18 @@ class TelegramNotifier:
             # Format funding fee emoji
             funding_emoji = '📈' if funding_fee > 0 else '📉' if funding_fee < 0 else '⚪'
             
+            # Calculate margin (for ROI percentage)
+            margin = notional_value / leverage if leverage > 0 else notional_value
+            
             # Calculate Gross P/L by ADDING fees back to Net P/L
             # Net P/L comes from Binance REALIZED_PNL (already has fees deducted)
             # Gross P/L = Net P/L + All Fees
             total_fees = total_commission + abs(funding_fee)  # funding_fee can be negative (cost)
             gross_pnl = pnl_usd + total_fees
-            gross_pnl_pct = (gross_pnl / notional_value * 100) if notional_value > 0 else 0
+            
+            # Calculate ROI percentages (P/L divided by margin, not notional)
+            gross_pnl_pct = (gross_pnl / margin * 100) if margin > 0 else 0
+            net_pnl_pct = (pnl_usd / margin * 100) if margin > 0 else 0
             
             message = f"""{status_emoji} <b>POSITION CLOSED - {status_text}</b>
 
@@ -482,7 +488,7 @@ class TelegramNotifier:
    - Exit Fee: ${exit_fee:.4f}
    - Funding Fee: ${funding_fee:+.4f} {funding_emoji}
    ━━━━━━━━━━━━━━━━━━━━━━
-   <b>Net P/L: ${pnl_usd:+.2f} ({pnl_percentage:+.2f}%)</b>
+   <b>Net P/L: ${pnl_usd:+.2f} ({net_pnl_pct:+.2f}%)</b>
 
 🔄 <b>Close Reason:</b> {reason_display}
 
