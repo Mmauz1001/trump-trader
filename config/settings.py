@@ -54,9 +54,25 @@ class Settings(BaseSettings):
     anthropic_api_key: str = Field("", description="Anthropic Claude API key")
 
     # Binance
-    binance_api_key: str = Field("", description="Binance API key")
-    binance_api_secret: str = Field("", description="Binance API secret")
+    binance_api_key: str = Field("", description="Binance API key (live)")
+    binance_api_secret: str = Field("", description="Binance API secret (live)")
     binance_testnet: bool = Field(default=True, description="Use Binance testnet")
+    binance_testnet_api_key: str = Field("", description="Binance testnet API key")
+    binance_testnet_api_secret: str = Field("", description="Binance testnet API secret")
+    
+    @property
+    def active_binance_api_key(self) -> str:
+        """Get the active Binance API key based on testnet setting."""
+        if self.binance_testnet:
+            return self.binance_testnet_api_key or self.binance_api_key
+        return self.binance_api_key
+    
+    @property
+    def active_binance_api_secret(self) -> str:
+        """Get the active Binance API secret based on testnet setting."""
+        if self.binance_testnet:
+            return self.binance_testnet_api_secret or self.binance_api_secret
+        return self.binance_api_secret
 
     # Telegram
     telegram_bot_token: str = Field("", description="Telegram bot token")

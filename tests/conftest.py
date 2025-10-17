@@ -19,9 +19,12 @@ def setup_test_environment():
     
     os.environ["ANTHROPIC_API_KEY"] = "test_anthropic_key"
     
-    os.environ["BINANCE_API_KEY"] = "test_binance_key"
-    os.environ["BINANCE_API_SECRET"] = "test_binance_secret"
+    # Use testnet keys from environment if available, otherwise use dummy values
+    os.environ["BINANCE_API_KEY"] = os.getenv("BINANCE_API_KEY", "test_binance_key")
+    os.environ["BINANCE_API_SECRET"] = os.getenv("BINANCE_API_SECRET", "test_binance_secret")
     os.environ["BINANCE_TESTNET"] = "true"
+    os.environ["BINANCE_TESTNET_API_KEY"] = os.getenv("BINANCE_TESTNET_API_KEY", "test_testnet_key")
+    os.environ["BINANCE_TESTNET_API_SECRET"] = os.getenv("BINANCE_TESTNET_API_SECRET", "test_testnet_secret")
     
     os.environ["TELEGRAM_BOT_TOKEN"] = "test_telegram_token"
     os.environ["TELEGRAM_CHANNEL_ID"] = "test_channel_id"

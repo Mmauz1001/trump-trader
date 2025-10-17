@@ -27,6 +27,10 @@ jobs:
           pip install pytest pytest-cov
       
       - name: Run tests
+        env:
+          BINANCE_TESTNET: "true"
+          BINANCE_TESTNET_API_KEY: ${{ secrets.BINANCE_TESTNET_API_KEY }}
+          BINANCE_TESTNET_API_SECRET: ${{ secrets.BINANCE_TESTNET_API_SECRET }}
         run: |
           python -m pytest tests/ -v --tb=short
       

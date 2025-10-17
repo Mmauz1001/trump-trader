@@ -19,8 +19,8 @@ class BinanceClient:
     def __init__(self):
         """Initialize Binance client."""
         self.client = Client(
-            api_key=settings.binance_api_key,
-            api_secret=settings.binance_api_secret,
+            api_key=settings.active_binance_api_key,
+            api_secret=settings.active_binance_api_secret,
             testnet=settings.binance_testnet
         )
         self.symbol = "BTCUSDT"
