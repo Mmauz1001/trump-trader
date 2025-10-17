@@ -220,6 +220,25 @@ class TradingBot:
                 except Exception as e:
                     logger.warning(f"Could not fetch funding fees: {e}")
                 
+                # Get ACTUAL stop orders from Binance
+                stop_orders = self.position_manager.binance.get_stop_orders()
+                
+                # Use actual stop-loss price if order exists, otherwise use database value
+                if stop_orders["stop_loss"]:
+                    stop_loss_price = stop_orders["stop_loss"]["stop_price"]
+                    stop_loss_active = True
+                else:
+                    stop_loss_price = open_trade.fixed_stop_loss_price
+                    stop_loss_active = False
+                
+                # Use actual trailing stop callback rate if order exists, otherwise use database value
+                if stop_orders["trailing_stop"]:
+                    trailing_callback_rate = stop_orders["trailing_stop"]["callback_rate"]
+                    trailing_stop_active = True
+                else:
+                    trailing_callback_rate = open_trade.trailing_callback_rate
+                    trailing_stop_active = False
+                
                 position_data = {
                     "trade_id": open_trade.id,
                     "side": open_trade.side,
@@ -230,8 +249,10 @@ class TradingBot:
                     "current_price": current_price,
                     "pnl_percentage": pnl_percentage,
                     "pnl_usd": pnl_usd,
-                    "stop_loss_price": open_trade.fixed_stop_loss_price,
-                    "trailing_callback_rate": open_trade.trailing_callback_rate,
+                    "stop_loss_price": stop_loss_price,
+                    "stop_loss_active": stop_loss_active,
+                    "trailing_callback_rate": trailing_callback_rate,
+                    "trailing_stop_active": trailing_stop_active,
                     "fees": fees,
                     "funding_fee": funding_fee,
                     "created_at": created_at_str,

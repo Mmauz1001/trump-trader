@@ -617,7 +617,9 @@ Choose wisely:"""
             quantity = position_data.get("quantity", 0)
             notional_value = position_data.get("notional_value", 0)
             stop_loss_price = position_data.get("stop_loss_price", 0)
+            stop_loss_active = position_data.get("stop_loss_active", False)
             trailing_callback_rate = position_data.get("trailing_callback_rate", 0)
+            trailing_stop_active = position_data.get("trailing_stop_active", False)
             fees = position_data.get("fees", 0)
             funding_fee = position_data.get("funding_fee", 0)
             created_at = position_data.get("created_at", "")
@@ -691,8 +693,8 @@ Choose wisely:"""
    📊 Margin Ratio: {margin_ratio:.2f}%
 
 🛡️ <b>RISK MANAGEMENT:</b>
-   Stop Loss: ${stop_loss_price:,.2f} ({stop_loss_distance:.2f}% away)
-   Trailing Stop: {trailing_stop_text}
+   Stop Loss: ${stop_loss_price:,.2f} ({stop_loss_distance:.2f}% away) {'✅' if stop_loss_active else '⚠️ NOT ACTIVE'}
+   Trailing Stop: {trailing_stop_text} {'✅' if trailing_stop_active else '⚠️ NOT ACTIVE'}
    Fixed Stop: 1% max loss
    Trailing Rate: {trailing_callback_rate:.1f}% callback
 

@@ -275,6 +275,45 @@ class BinanceClient:
             logger.error(f"Error closing positions: {e}")
             return False
 
+    def get_stop_orders(self) -> Dict:
+        """Get actual stop-loss and trailing stop orders from Binance."""
+        try:
+            orders = self.client.futures_get_open_orders(symbol=self.symbol)
+            
+            stop_loss_order = None
+            trailing_stop_order = None
+            
+            for order in orders:
+                order_type = order.get('type')
+                
+                # Find STOP_MARKET order (fixed stop-loss)
+                if order_type == 'STOP_MARKET' and order.get('reduceOnly'):
+                    stop_loss_order = {
+                        "order_id": order['orderId'],
+                        "stop_price": float(order.get('stopPrice', 0)),
+                        "side": order['side'],
+                        "quantity": float(order['origQty'])
+                    }
+                
+                # Find TRAILING_STOP_MARKET order
+                elif order_type == 'TRAILING_STOP_MARKET' and order.get('reduceOnly'):
+                    trailing_stop_order = {
+                        "order_id": order['orderId'],
+                        "activation_price": float(order.get('activatePrice', 0)),
+                        "callback_rate": float(order.get('priceRate', 0)) * 100,  # Convert to percentage
+                        "side": order['side'],
+                        "quantity": float(order['origQty'])
+                    }
+            
+            return {
+                "stop_loss": stop_loss_order,
+                "trailing_stop": trailing_stop_order
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting stop orders: {e}")
+            return {"stop_loss": None, "trailing_stop": None}
+
     def cancel_all_orders(self) -> bool:
         """Cancel all open orders."""
         try:
