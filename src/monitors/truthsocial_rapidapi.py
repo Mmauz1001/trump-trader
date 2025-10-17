@@ -1,6 +1,7 @@
 """Truth Social monitor using RapidAPI for real-time data."""
 
 import json
+import re
 import time
 import threading
 from datetime import datetime, timezone
@@ -44,18 +45,19 @@ class TruthSocialRapidAPI:
                 "limit": 1
             }
             
-            response = requests.get(url, headers=self.headers, params=params, timeout=10)
+            response = requests.get(url, headers=self.headers, params=params, timeout=20)
             
             logger.info(f"Response status: {response.status_code}")
             logger.info(f"Response text: {response.text[:200]}...")
             
             if response.status_code == 200:
                 data = response.json()
-                if "feed" in data or "statuses" in data:
+                # The API returns a list directly
+                if isinstance(data, list) and len(data) > 0:
                     logger.info(f"✅ RapidAPI Truth Social connected. User: @{self.username}")
                     return True
                 else:
-                    logger.error("❌ RapidAPI Truth Social: Unexpected response structure")
+                    logger.error(f"❌ RapidAPI Truth Social: Unexpected response structure (type: {type(data)})")
                     return False
             else:
                 logger.error(f"❌ RapidAPI Truth Social connection failed: {response.status_code}")
@@ -75,7 +77,7 @@ class TruthSocialRapidAPI:
                 "limit": max_results
             }
             
-            response = requests.get(url, headers=self.headers, params=params, timeout=10)
+            response = requests.get(url, headers=self.headers, params=params, timeout=20)
             
             logger.info(f"Posts response status: {response.status_code}")
             logger.info(f"Posts response text: {response.text[:200]}...")
@@ -84,18 +86,27 @@ class TruthSocialRapidAPI:
                 data = response.json()
                 posts = []
                 
-                # Parse the response structure (adjust based on actual API response)
-                feed_items = data.get("feed", []) or data.get("statuses", [])
+                # The API returns a list directly
+                if isinstance(data, list):
+                    feed_items = data[:max_results]
+                else:
+                    # Fallback if response structure changes
+                    feed_items = data.get("feed", []) or data.get("statuses", [])
                 
-                for item in feed_items[:max_results]:
-                    # Extract post data (adjust field names based on actual response)
+                for item in feed_items:
+                    # Extract plain text from HTML content
+                    content = item.get("content", "")
+                    # Simple HTML tag removal (for better text processing)
+                    text = re.sub(r'<[^>]+>', '', content)
+                    
+                    # Extract post data based on actual API response structure
                     post_dict = {
-                        "id": item.get("id") or item.get("status_id"),
-                        "text": item.get("content") or item.get("text") or item.get("body", ""),
-                        "created_at": item.get("created_at") or item.get("published_at"),
+                        "id": item.get("id"),
+                        "text": text.strip(),
+                        "created_at": item.get("created_at"),
                         "public_metrics": {
-                            "repost_count": item.get("reblogs_count", 0) or item.get("reposts_count", 0),
-                            "like_count": item.get("favourites_count", 0) or item.get("likes_count", 0),
+                            "repost_count": item.get("reblogs_count", 0),
+                            "like_count": item.get("favourites_count", 0),
                             "reply_count": item.get("replies_count", 0)
                         },
                         "platform": "TRUTH_SOCIAL"
