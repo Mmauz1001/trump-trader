@@ -38,8 +38,13 @@ class TwitterRapidAPI:
     def _log_rate_limit(self, response: requests.Response) -> None:
         """Log RapidAPI rate limit information from response headers."""
         try:
-            limit = response.headers.get('X-RateLimit-Limit', 'N/A')
-            remaining = response.headers.get('X-RateLimit-Remaining', 'N/A')
+            # RapidAPI uses different header names
+            limit = (response.headers.get('X-RateLimit-Requests-Limit') or 
+                    response.headers.get('X-RateLimit-Limit') or 
+                    'N/A')
+            remaining = (response.headers.get('X-RateLimit-Requests-Remaining') or 
+                        response.headers.get('X-RateLimit-Remaining') or 
+                        'N/A')
             reset = response.headers.get('X-RateLimit-Reset', 'N/A')
             
             # Store for later retrieval
@@ -71,6 +76,7 @@ class TwitterRapidAPI:
             
             logger.info(f"Response status: {response.status_code}")
             logger.info(f"Response text: {response.text[:200]}...")
+            logger.debug(f"Response headers: {dict(response.headers)}")
             self._log_rate_limit(response)
             
             if response.status_code == 200:
