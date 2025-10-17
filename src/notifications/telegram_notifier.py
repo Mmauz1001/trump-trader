@@ -145,13 +145,25 @@ class TelegramNotifier:
         try:
             platform = post_data["platform"]
             content = post_data["content"]
-            posted_at = post_data["posted_at"]
+            created_at = post_data.get("created_at") or post_data.get("posted_at")
             score = sentiment_result["score"]
             reasoning = sentiment_result["reasoning"]
             
             # Format timestamp
-            if isinstance(posted_at, str):
-                posted_at = datetime.fromisoformat(posted_at.replace("Z", "+00:00"))
+            if isinstance(created_at, str):
+                # Handle different timestamp formats
+                try:
+                    # Try ISO format first (Truth Social)
+                    if "T" in created_at:
+                        posted_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+                    else:
+                        # Try Twitter format: "Tue Oct 14 17:20:04 +0000 2025"
+                        posted_at = datetime.strptime(created_at, "%a %b %d %H:%M:%S %z %Y")
+                except (ValueError, AttributeError):
+                    # Fallback to current time
+                    posted_at = datetime.now(timezone.utc)
+            else:
+                posted_at = created_at
             
             timestamp = posted_at.strftime("%Y-%m-%d %H:%M:%S UTC")
             
