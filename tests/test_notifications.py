@@ -337,7 +337,9 @@ class TestTelegramNotifier:
             "exit_price": 51000.0,
             "pnl_percentage": 2.0,
             "pnl_usd": 100.0,
-            "close_reason": "MANUAL"
+            "close_reason": "MANUAL",
+            "leverage": 10,
+            "notional_value": 5000.0  # For calculating margin = 5000/10 = 500
         }
         
         result = notifier.notify_position_closed(close_data)
@@ -348,9 +350,9 @@ class TestTelegramNotifier:
         # Check message content
         call_args = mock_post.call_args
         message_data = call_args[1]["json"]
-        # Epic celebration messages no longer contain "POSITION CLOSED"
-        # Instead they have creative victory messages
-        assert ("+2.00%" in message_data["text"] or "LEGEND" in message_data["text"] or "BEAST" in message_data["text"])
+        # Check for correct ROI percentage (based on margin, not notional)
+        # With $100 PnL on $500 margin = 20% ROI
+        assert ("+20.00%" in message_data["text"] or "LEGEND" in message_data["text"] or "BEAST" in message_data["text"])
 
     @patch('src.notifications.telegram_notifier.requests.post')
     def test_notify_position_closed_loss(self, mock_post):
@@ -367,6 +369,8 @@ class TestTelegramNotifier:
             "trade_id": 1,
             "exit_price": 49000.0,
             "pnl_percentage": -2.0,
+            "leverage": 10,
+            "notional_value": 5000.0,  # For calculating margin = 5000/10 = 500
             "pnl_usd": -100.0,
             "close_reason": "STOP_LOSS"
         }
@@ -379,9 +383,9 @@ class TestTelegramNotifier:
         # Check message content
         call_args = mock_post.call_args
         message_data = call_args[1]["json"]
-        # Epic mockery messages no longer contain "POSITION CLOSED"
-        # Instead they have brutal mockery messages
-        assert ("-2.00%" in message_data["text"] or "CLOWN" in message_data["text"] or "HAHAHAHA" in message_data["text"])
+        # Check for correct ROI percentage (based on margin, not notional)
+        # With -$100 PnL on $500 margin = -20% ROI
+        assert ("-20.00%" in message_data["text"] or "CLOWN" in message_data["text"] or "HAHAHAHA" in message_data["text"])
 
     @patch('src.notifications.telegram_notifier.requests.post')
     def test_notify_error(self, mock_post):
