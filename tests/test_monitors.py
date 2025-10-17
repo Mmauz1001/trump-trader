@@ -41,6 +41,11 @@ class TestTwitterMonitor:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.text = '{"result":{"data":{"user":{"result":{"core":{"screen_name":"realDonaldTrump"}}}}}}'
+        mock_response.headers = {
+            'x-ratelimit-requests-limit': '500',
+            'x-ratelimit-requests-remaining': '450',
+            'x-ratelimit-requests-reset': '3600'
+        }
         mock_response.json.return_value = {
             "result": {
                 "data": {
@@ -207,6 +212,11 @@ class TestTruthSocialMonitor:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.text = '[{"id":"115387504970821391","content":"<p>Test post</p>"}]'
+        mock_response.headers = {
+            'x-ratelimit-requests-limit': '1000',
+            'x-ratelimit-requests-remaining': '980',
+            'x-ratelimit-requests-reset': '3600'
+        }
         mock_response.json.return_value = [
             {
                 "id": "115387504970821391",
