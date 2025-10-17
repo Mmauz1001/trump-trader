@@ -38,14 +38,10 @@ class TwitterRapidAPI:
     def _log_rate_limit(self, response: requests.Response) -> None:
         """Log RapidAPI rate limit information from response headers."""
         try:
-            # RapidAPI uses different header names
-            limit = (response.headers.get('X-RateLimit-Requests-Limit') or 
-                    response.headers.get('X-RateLimit-Limit') or 
-                    'N/A')
-            remaining = (response.headers.get('X-RateLimit-Requests-Remaining') or 
-                        response.headers.get('X-RateLimit-Remaining') or 
-                        'N/A')
-            reset = response.headers.get('X-RateLimit-Reset', 'N/A')
+            # RapidAPI uses lowercase header names
+            limit = response.headers.get('x-ratelimit-requests-limit', 'N/A')
+            remaining = response.headers.get('x-ratelimit-requests-remaining', 'N/A')
+            reset = response.headers.get('x-ratelimit-requests-reset', 'N/A')
             
             # Store for later retrieval
             self.last_rate_limit = {
