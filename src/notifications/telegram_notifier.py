@@ -631,9 +631,17 @@ Choose wisely:"""
             margin_ratio = position_data.get("margin_ratio", 0)
             margin_type = position_data.get("margin_type", "CROSS")
             
-            # Calculate additional metrics
+            # Calculate price change since entry
             price_change = current_price - entry_price
             price_change_pct = (price_change / entry_price) * 100
+            
+            # Determine price change emoji
+            if price_change_pct > 0:
+                price_emoji = "📈"
+            elif price_change_pct < 0:
+                price_emoji = "📉"
+            else:
+                price_emoji = "➖"
             
             # Calculate actual trailing stop price
             if trailing_callback_rate > 0:
@@ -672,7 +680,7 @@ Choose wisely:"""
 💵 <b>PRICING:</b>
    📍 Entry Price: ${entry_price:,.2f}
    🎯 Break-Even: ${breakeven_price:,.2f}
-   📊 Mark Price: ${mark_price:,.2f}
+   📊 Mark Price: ${mark_price:,.2f} {price_emoji} ({price_change_pct:+.2f}%)
    ⚠️ Liq. Price: ${liquidation_price:,.2f}
 
 {pnl_emoji} <b>PNL (ROI):</b>
