@@ -31,8 +31,34 @@ class TwitterRapidAPI:
         self.db = DatabaseRepository()
         self.is_monitoring = False
         self.ws = None
+        self.last_rate_limit = {"limit": None, "remaining": None, "reset": None}
         
         logger.info("Twitter RapidAPI monitor initialized")
+
+    def _log_rate_limit(self, response: requests.Response) -> None:
+        """Log RapidAPI rate limit information from response headers."""
+        try:
+            limit = response.headers.get('X-RateLimit-Limit', 'N/A')
+            remaining = response.headers.get('X-RateLimit-Remaining', 'N/A')
+            reset = response.headers.get('X-RateLimit-Reset', 'N/A')
+            
+            # Store for later retrieval
+            self.last_rate_limit = {
+                "limit": limit if limit != 'N/A' else None,
+                "remaining": remaining if remaining != 'N/A' else None,
+                "reset": reset if reset != 'N/A' else None
+            }
+            
+            if remaining != 'N/A':
+                logger.info(f"📊 RapidAPI Twitter Rate Limit - Remaining: {remaining}/{limit}, Resets: {reset}")
+                
+                # Warn if approaching limit
+                if remaining != 'N/A' and limit != 'N/A':
+                    remaining_pct = (int(remaining) / int(limit)) * 100
+                    if remaining_pct < 10:
+                        logger.warning(f"⚠️ RapidAPI Twitter rate limit low: {remaining_pct:.1f}% remaining!")
+        except Exception as e:
+            logger.debug(f"Could not parse rate limit headers: {e}")
 
     def test_connection(self) -> bool:
         """Test RapidAPI connection."""
@@ -45,6 +71,7 @@ class TwitterRapidAPI:
             
             logger.info(f"Response status: {response.status_code}")
             logger.info(f"Response text: {response.text[:200]}...")
+            self._log_rate_limit(response)
             
             if response.status_code == 200:
                 data = response.json()
@@ -79,6 +106,27 @@ class TwitterRapidAPI:
             
             logger.info(f"Tweets response status: {response.status_code}")
             logger.info(f"Tweets response text: {response.text[:200]}...")
+            self._log_rate_limit(response)
+            
+            # Check for rate limit error
+            if response.status_code == 429:
+                logger.error(f"⚠️ RapidAPI Twitter RATE LIMIT exceeded!")
+                logger.error(f"Rate limit will reset at: {self.last_rate_limit.get('reset', 'unknown')}")
+                
+                # Notify via Telegram if callback is available
+                try:
+                    from src.notifications.telegram_notifier import TelegramNotifier
+                    telegram = TelegramNotifier()
+                    telegram.notify_error({
+                        "type": "RateLimit",
+                        "message": f"Twitter API rate limit exceeded. Resets at: {self.last_rate_limit.get('reset', 'unknown')}",
+                        "component": "Twitter Monitor"
+                    })
+                except Exception as e:
+                    logger.debug(f"Could not send Telegram notification: {e}")
+                
+                # Return empty to avoid crashing, polling will continue
+                return []
             
             if response.status_code == 200:
                 data = response.json()
@@ -254,5 +302,6 @@ class TwitterRapidAPI:
             "method": "RapidAPI Polling",
             "real_time": False,
             "polling_interval": "30 seconds",
-            "last_check": get_timestamp()
+            "last_check": get_timestamp(),
+            "rate_limit": self.last_rate_limit
         }

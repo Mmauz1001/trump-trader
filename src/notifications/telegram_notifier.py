@@ -788,6 +788,10 @@ Choose wisely:"""
             total_trades = account_data.get("total_trades", 0)
             pnl_24h = account_data.get("pnl_24h", 0)
             
+            # Get rate limit info if available
+            twitter_rate_limit = account_data.get("twitter_rate_limit", {})
+            truthsocial_rate_limit = account_data.get("truthsocial_rate_limit", {})
+            
             # Determine mode emoji
             mode_emoji = "🔴" if trading_mode == "LIVE" else "🟡"
             
@@ -813,6 +817,20 @@ Choose wisely:"""
                 pnl_emoji = "🟡"
                 pnl_text = "$0.00"
             
+            # Format rate limit info
+            rate_limit_text = ""
+            if twitter_rate_limit.get("remaining") and twitter_rate_limit.get("limit"):
+                tw_remaining = twitter_rate_limit["remaining"]
+                tw_limit = twitter_rate_limit["limit"]
+                tw_pct = (int(tw_remaining) / int(tw_limit)) * 100
+                rate_limit_text += f"\n   📊 Twitter: {tw_remaining}/{tw_limit} ({tw_pct:.0f}%)"
+            
+            if truthsocial_rate_limit.get("remaining") and truthsocial_rate_limit.get("limit"):
+                ts_remaining = truthsocial_rate_limit["remaining"]
+                ts_limit = truthsocial_rate_limit["limit"]
+                ts_pct = (int(ts_remaining) / int(ts_limit)) * 100
+                rate_limit_text += f"\n   📊 Truth Social: {ts_remaining}/{ts_limit} ({ts_pct:.0f}%)"
+            
             message = f"""🚀 <b>TRUMP TRADER BOT STARTED</b>
 
 ✅ <b>Status:</b> Online and monitoring
@@ -829,9 +847,10 @@ Choose wisely:"""
    📈 Total Trades: {total_trades}
    {pnl_emoji} 24h PnL: {pnl_text}
 
-🔍 <b>Monitoring:</b> Twitter + Truth Social (30s intervals)
+🔍 <b>Monitoring:</b> Twitter + Truth Social (30s)
 🤖 <b>AI Analysis:</b> Claude 3.5 Sonnet
 📱 <b>Notifications:</b> Telegram
+{rate_limit_text}
 
 ⏰ <b>Started:</b> {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}
 

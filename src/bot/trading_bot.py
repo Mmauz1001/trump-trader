@@ -326,6 +326,18 @@ class TradingBot:
                     if trade.pnl_usd is not None:
                         pnl_24h += trade.pnl_usd
             
+            # Get rate limit info from monitors
+            twitter_rate_limit = {}
+            truthsocial_rate_limit = {}
+            
+            if self.twitter_monitor:
+                twitter_status = self.twitter_monitor.get_monitoring_status()
+                twitter_rate_limit = twitter_status.get("rate_limit", {})
+            
+            if self.truthsocial_monitor:
+                truthsocial_status = self.truthsocial_monitor.get_monitoring_status()
+                truthsocial_rate_limit = truthsocial_status.get("rate_limit", {})
+            
             return {
                 "balance": float(balance),
                 "available_balance": float(available_balance),
@@ -334,7 +346,9 @@ class TradingBot:
                 "trading_mode": trading_mode,
                 "open_positions": open_positions,
                 "total_trades": total_trades,
-                "pnl_24h": pnl_24h
+                "pnl_24h": pnl_24h,
+                "twitter_rate_limit": twitter_rate_limit,
+                "truthsocial_rate_limit": truthsocial_rate_limit
             }
             
         except Exception as e:
