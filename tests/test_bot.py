@@ -10,15 +10,20 @@ from src.bot.trading_bot import TradingBot
 class TestTradingBot:
     """Test trading bot functionality."""
 
-    def test_init(self):
+    @patch('src.trading.binance_client.Client')
+    def test_init(self, mock_binance_client):
         """Test bot initialization."""
+        # Mock Binance client to avoid geo-restriction errors
+        mock_client = Mock()
+        mock_binance_client.return_value = mock_client
+        
         bot = TradingBot()
         assert bot.db is not None
         assert bot.sentiment_analyzer is not None
         assert bot.position_manager is not None
         assert bot.telegram is not None
         assert bot.twitter_monitor is not None
-        # Truth Social removed entirely
+        assert bot.truthsocial_monitor is not None
         assert bot.is_running is False
         assert bot.monitoring_threads == []
 
